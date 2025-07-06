@@ -15,34 +15,41 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ENUM: User role hierarchy for the church organization
+// Controls what data each user can see and modify
 enum Role {
-  DIRECTOR
-  REGION_LEADER
-  GROUP_LEADER
-  GROUP_MEMBER
+  DIRECTOR // Can see all regions, groups, and data
+  REGION_LEADER // Can see their region's groups and data
+  GROUP_LEADER // Can see their group members and their data
+  GROUP_MEMBER // Can only see their own data
 }
 
+// MAIN USER TABLE: Core user information and authentication
+// Links to role-specific profile tables for detailed permissions
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
   name      String
-  role      Role
+  role      Role // Determines access level in the hierarchy
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relationships based on role
+  // Role-specific profile relationships (one-to-one)
+  // Only one of these will be populated based on the user's role
   directorProfile     DirectorProfile?
   regionLeaderProfile RegionLeaderProfile?
   groupLeaderProfile  GroupLeaderProfile?
   groupMemberProfile  GroupMemberProfile?
 
-  // Evangelism contacts created by this user
-  evangelismContacts EvangelismContact[]
-  studentRecords     StudentRecord[]
+  // Data created by this user
+  evangelismContacts EvangelismContact[] // Contacts this user has made
+  studentRecords     StudentRecord[] // Students this user is tracking
 
   @@map("users")
 }
 
+// DIRECTOR PROFILE: Highest level - can see everything
+// Directors manage the entire organization and all regions
 model DirectorProfile {
   id     String @id @default(cuid())
   userId String @unique
@@ -51,6 +58,8 @@ model DirectorProfile {
   @@map("director_profiles")
 }
 
+// REGION TABLE: Geographic or organizational divisions
+// Allows flexible organization structure - can add unlimited regions
 model Region {
   id          String   @id @default(cuid())
   name        String   @unique
@@ -58,12 +67,15 @@ model Region {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // One region can have multiple leaders and groups
   regionLeaders RegionLeaderProfile[]
   groups        Group[]
 
   @@map("regions")
 }
 
+// REGION LEADER PROFILE: Manages a specific region
+// Can see all groups and data within their assigned region
 model RegionLeaderProfile {
   id       String @id @default(cuid())
   userId   String @unique
@@ -74,22 +86,28 @@ model RegionLeaderProfile {
   @@map("region_leader_profiles")
 }
 
+// GROUP TABLE: Smaller units within regions
+// The basic organizational unit for evangelism activities
 model Group {
   id          String   @id @default(cuid())
   name        String
   description String?
-  regionId    String
+  regionId    String // Must belong to a region
   region      Region   @relation(fields: [regionId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // One group can have multiple leaders and members
   groupLeaders GroupLeaderProfile[]
   groupMembers GroupMemberProfile[]
 
+  // Ensure group names are unique within a region
   @@unique([name, regionId])
   @@map("groups")
 }
 
+// GROUP LEADER PROFILE: Manages a specific group
+// Can see data from all members in their group
 model GroupLeaderProfile {
   id      String @id @default(cuid())
   userId  String @unique
@@ -100,6 +118,8 @@ model GroupLeaderProfile {
   @@map("group_leader_profiles")
 }
 
+// GROUP MEMBER PROFILE: Individual participants
+// Can only see and modify their own data
 model GroupMemberProfile {
   id      String @id @default(cuid())
   userId  String @unique
@@ -110,36 +130,40 @@ model GroupMemberProfile {
   @@map("group_member_profiles")
 }
 
+// EVANGELISM CONTACT TABLE: Records of street evangelism encounters
+// Tracks people contacted during evangelism activities
 model EvangelismContact {
   id           String    @id @default(cuid())
-  contactName  String
+  contactName  String // Name of the person contacted
   contactInfo  String? // Phone, email, or other contact details
-  location     String? // Where the contact was made
-  notes        String?
-  followUpDate DateTime?
-  contacted    Boolean   @default(false)
+  location     String? // Where the contact was made (street, event, etc.)
+  notes        String? // Additional information about the encounter
+  followUpDate DateTime? // When to follow up with this person
+  contacted    Boolean   @default(false) // Whether follow-up has been completed
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  // Who created this contact
+  // Track who made this contact (for visibility permissions)
   createdById String
   createdBy   User   @relation(fields: [createdById], references: [id])
 
   @@map("evangelism_contacts")
 }
 
+// STUDENT RECORD TABLE: Tracks ongoing discipleship/teaching
+// Records students currently being taught or discipled
 model StudentRecord {
   id             String    @id @default(cuid())
-  studentName    String
-  lastLesson     String?
-  lastLessonDate DateTime?
-  nextLessonDate DateTime?
-  notes          String?
-  isActive       Boolean   @default(true)
+  studentName    String // Name of the student being taught
+  lastLesson     String? // What was covered in the last lesson
+  lastLessonDate DateTime? // When the last lesson occurred
+  nextLessonDate DateTime? // When the next lesson is scheduled
+  notes          String? // Progress notes, prayer requests, etc.
+  isActive       Boolean   @default(true) // Whether still actively teaching this student
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  // Who is tracking this student
+  // Track who is teaching this student (for visibility permissions)
   trackerId String
   tracker   User   @relation(fields: [trackerId], references: [id])
 

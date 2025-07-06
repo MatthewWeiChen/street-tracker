@@ -4,14 +4,19 @@
  * - Sets up code generation for type safety
  * - Configures the GraphQL context (authentication, database access)
  */
+
 import { makeSchema } from "nexus";
 import { join } from "path";
 import * as types from "./types";
+import { DateTimeResolver } from "graphql-scalars";
 
 // GraphQL schema builder using Nexus
 // Automatically generates TypeScript types for resolvers and schema
 export const schema = makeSchema({
-  types, // Import all GraphQL types and resolvers
+  types: [
+    types, // Import all GraphQL types and resolvers
+    DateTimeResolver, // Add DateTime scalar support
+  ],
   outputs: {
     // Generate GraphQL schema file for frontend tools
     schema: join(process.cwd(), "schema.graphql"),
