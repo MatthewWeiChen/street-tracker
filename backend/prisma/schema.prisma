@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  DIRECTOR
+  REGION_LEADER
+  GROUP_LEADER
+  GROUP_MEMBER
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  role      Role
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships based on role
+  directorProfile     DirectorProfile?
+  regionLeaderProfile RegionLeaderProfile?
+  groupLeaderProfile  GroupLeaderProfile?
+  groupMemberProfile  GroupMemberProfile?
+
+  // Evangelism contacts created by this user
+  evangelismContacts EvangelismContact[]
+  studentRecords     StudentRecord[]
+
+  @@map("users")
+}
+
+model DirectorProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("director_profiles")
+}
+
+model Region {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  regionLeaders RegionLeaderProfile[]
+  groups        Group[]
+
+  @@map("regions")
+}
+
+model RegionLeaderProfile {
+  id       String @id @default(cuid())
+  userId   String @unique
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  regionId String
+  region   Region @relation(fields: [regionId], references: [id], onDelete: Cascade)
+
+  @@map("region_leader_profiles")
+}
+
+model Group {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  regionId    String
+  region      Region   @relation(fields: [regionId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  groupLeaders GroupLeaderProfile[]
+  groupMembers GroupMemberProfile[]
+
+  @@unique([name, regionId])
+  @@map("groups")
+}
+
+model GroupLeaderProfile {
+  id      String @id @default(cuid())
+  userId  String @unique
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  groupId String
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@map("group_leader_profiles")
+}
+
+model GroupMemberProfile {
+  id      String @id @default(cuid())
+  userId  String @unique
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  groupId String
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@map("group_member_profiles")
+}
+
+model EvangelismContact {
+  id           String    @id @default(cuid())
+  contactName  String
+  contactInfo  String? // Phone, email, or other contact details
+  location     String? // Where the contact was made
+  notes        String?
+  followUpDate DateTime?
+  contacted    Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Who created this contact
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id])
+
+  @@map("evangelism_contacts")
+}
+
+model StudentRecord {
+  id             String    @id @default(cuid())
+  studentName    String
+  lastLesson     String?
+  lastLessonDate DateTime?
+  nextLessonDate DateTime?
+  notes          String?
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Who is tracking this student
+  trackerId String
+  tracker   User   @relation(fields: [trackerId], references: [id])
+
+  @@map("student_records")
+}
