@@ -1,115 +1,209 @@
-import Image from "next/image";
-import { Geist, Geist_Mono } from "next/font/google";
+import React from "react";
+import { useQuery } from "@apollo/client";
+import { gql } from "@apollo/client";
+import Layout from "../components/Layout";
+import {
+  PhoneIcon,
+  AcademicCapIcon,
+  UsersIcon,
+  MapIcon,
+} from "@heroicons/react/24/outline";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+const DASHBOARD_QUERY = gql`
+  query Dashboard {
+    evangelismContacts {
+      id
+      contactName
+      contacted
+      createdAt
+      createdBy {
+        name
+      }
+    }
+    studentRecords {
+      id
+      studentName
+      isActive
+      lastLessonDate
+      tracker {
+        name
+      }
+    }
+    me {
+      role
+    }
+  }
+`;
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+export default function Dashboard() {
+  const { data, loading, error } = useQuery(DASHBOARD_QUERY);
 
-export default function Home() {
-  return (
-    <div
-      className={`${geistSans.className} ${geistMono.className} grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]`}
-    >
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/pages/index.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  if (loading) {
+    return (
+      <Layout>
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded mb-4"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-32 bg-gray-200 rounded"></div>
+            ))}
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      </Layout>
+    );
+  }
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="text-red-600">
+          Error loading dashboard: {error.message}
+        </div>
+      </Layout>
+    );
+  }
+
+  const { evangelismContacts = [], studentRecords = [], me } = data;
+
+  const totalContacts = evangelismContacts.length;
+  const contactedCount = evangelismContacts.filter(
+    (c: any) => c.contacted
+  ).length;
+  const activeStudents = studentRecords.filter((s: any) => s.isActive).length;
+  const recentContacts = evangelismContacts
+    .sort(
+      (a: any, b: any) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
+    .slice(0, 5);
+
+  const stats = [
+    {
+      name: "Total Contacts",
+      value: totalContacts,
+      icon: PhoneIcon,
+      color: "bg-blue-500",
+    },
+    {
+      name: "Contacted",
+      value: contactedCount,
+      icon: PhoneIcon,
+      color: "bg-green-500",
+    },
+    {
+      name: "Active Students",
+      value: activeStudents,
+      icon: AcademicCapIcon,
+      color: "bg-purple-500",
+    },
+    {
+      name: "Pending Follow-ups",
+      value: totalContacts - contactedCount,
+      icon: UsersIcon,
+      color: "bg-yellow-500",
+    },
+  ];
+
+  return (
+    <Layout>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Overview of your evangelism activities and student progress
+          </p>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {stats.map((stat) => (
+            <div
+              key={stat.name}
+              className="bg-white overflow-hidden shadow rounded-lg"
+            >
+              <div className="p-5">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <div className={`${stat.color} p-3 rounded-md`}>
+                      <stat.icon className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
+                  <div className="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt className="text-sm font-medium text-gray-500 truncate">
+                        {stat.name}
+                      </dt>
+                      <dd className="text-lg font-medium text-gray-900">
+                        {stat.value}
+                      </dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Recent Activity */}
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-4 py-5 sm:p-6">
+            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+              Recent Evangelism Contacts
+            </h3>
+            {recentContacts.length > 0 ? (
+              <div className="flow-root">
+                <ul className="-my-5 divide-y divide-gray-200">
+                  {recentContacts.map((contact: any) => (
+                    <li key={contact.id} className="py-4">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex-shrink-0">
+                          <div
+                            className={`h-8 w-8 rounded-full ${
+                              contact.contacted
+                                ? "bg-green-100"
+                                : "bg-yellow-100"
+                            } flex items-center justify-center`}
+                          >
+                            <PhoneIcon
+                              className={`h-4 w-4 ${
+                                contact.contacted
+                                  ? "text-green-600"
+                                  : "text-yellow-600"
+                              }`}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {contact.contactName}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            Added by {contact.createdBy.name} •{" "}
+                            {new Date(contact.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="flex-shrink-0">
+                          <span
+                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              contact.contacted
+                                ? "bg-green-100 text-green-800"
+                                : "bg-yellow-100 text-yellow-800"
+                            }`}
+                          >
+                            {contact.contacted ? "Contacted" : "Pending"}
+                          </span>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm">No recent contacts found.</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </Layout>
   );
 }
