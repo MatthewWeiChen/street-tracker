@@ -11,25 +11,9 @@ import {
 
 const DASHBOARD_QUERY = gql`
   query Dashboard {
-    evangelismContacts {
-      id
-      contactName
-      contacted
-      createdAt
-      createdBy {
-        name
-      }
-    }
-    studentRecords {
-      id
-      studentName
-      isActive
-      lastLessonDate
-      tracker {
-        name
-      }
-    }
     me {
+      id
+      name
       role
     }
   }
@@ -56,50 +40,43 @@ export default function Dashboard() {
   if (error) {
     return (
       <Layout>
-        <div className="text-red-600">
-          Error loading dashboard: {error.message}
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <div className="text-red-800">
+            <strong>GraphQL Error:</strong> {error.message}
+          </div>
+          <div className="text-red-600 text-sm mt-2">
+            Make sure your backend server is running on port 4000
+          </div>
         </div>
       </Layout>
     );
   }
 
-  const { evangelismContacts = [], studentRecords = [], me } = data;
-
-  const totalContacts = evangelismContacts.length;
-  const contactedCount = evangelismContacts.filter(
-    (c: any) => c.contacted
-  ).length;
-  const activeStudents = studentRecords.filter((s: any) => s.isActive).length;
-  const recentContacts = evangelismContacts
-    .sort(
-      (a: any, b: any) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    )
-    .slice(0, 5);
+  const currentUser = data?.me;
 
   const stats = [
     {
       name: "Total Contacts",
-      value: totalContacts,
+      value: "--",
       icon: PhoneIcon,
       color: "bg-blue-500",
     },
     {
-      name: "Contacted",
-      value: contactedCount,
-      icon: PhoneIcon,
+      name: "Active Students",
+      value: "--",
+      icon: AcademicCapIcon,
       color: "bg-green-500",
     },
     {
-      name: "Active Students",
-      value: activeStudents,
-      icon: AcademicCapIcon,
+      name: "Your Role",
+      value: currentUser?.role?.replace("_", " ") || "Member",
+      icon: UsersIcon,
       color: "bg-purple-500",
     },
     {
-      name: "Pending Follow-ups",
-      value: totalContacts - contactedCount,
-      icon: UsersIcon,
+      name: "Regions",
+      value: "--",
+      icon: MapIcon,
       color: "bg-yellow-500",
     },
   ];
@@ -110,7 +87,8 @@ export default function Dashboard() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Overview of your evangelism activities and student progress
+            Welcome back, {currentUser?.name || "User"}! Overview of your
+            evangelism activities.
           </p>
         </div>
 
@@ -144,63 +122,61 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Recent Activity */}
+        {/* User Info */}
         <div className="bg-white shadow rounded-lg">
           <div className="px-4 py-5 sm:p-6">
             <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-              Recent Evangelism Contacts
+              Your Profile
             </h3>
-            {recentContacts.length > 0 ? (
-              <div className="flow-root">
-                <ul className="-my-5 divide-y divide-gray-200">
-                  {recentContacts.map((contact: any) => (
-                    <li key={contact.id} className="py-4">
-                      <div className="flex items-center space-x-4">
-                        <div className="flex-shrink-0">
-                          <div
-                            className={`h-8 w-8 rounded-full ${
-                              contact.contacted
-                                ? "bg-green-100"
-                                : "bg-yellow-100"
-                            } flex items-center justify-center`}
-                          >
-                            <PhoneIcon
-                              className={`h-4 w-4 ${
-                                contact.contacted
-                                  ? "text-green-600"
-                                  : "text-yellow-600"
-                              }`}
-                            />
-                          </div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">
-                            {contact.contactName}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            Added by {contact.createdBy.name} •{" "}
-                            {new Date(contact.createdAt).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <div className="flex-shrink-0">
-                          <span
-                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              contact.contacted
-                                ? "bg-green-100 text-green-800"
-                                : "bg-yellow-100 text-yellow-800"
-                            }`}
-                          >
-                            {contact.contacted ? "Contacted" : "Pending"}
-                          </span>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <dt className="text-sm font-medium text-gray-500">Name</dt>
+                <dd className="mt-1 text-sm text-gray-900">
+                  {currentUser?.name}
+                </dd>
               </div>
-            ) : (
-              <p className="text-gray-500 text-sm">No recent contacts found.</p>
-            )}
+              <div>
+                <dt className="text-sm font-medium text-gray-500">Email</dt>
+                <dd className="mt-1 text-sm text-gray-900">
+                  {currentUser?.email}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-gray-500">Role</dt>
+                <dd className="mt-1 text-sm text-gray-900">
+                  {currentUser?.role?.replace("_", " ")}
+                </dd>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Getting Started */}
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-4 py-5 sm:p-6">
+            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+              Next Steps
+            </h3>
+            <div className="space-y-3">
+              <div className="flex items-center">
+                <PhoneIcon className="h-5 w-5 text-blue-500 mr-3" />
+                <span className="text-sm text-gray-700">
+                  Start tracking evangelism contacts
+                </span>
+              </div>
+              <div className="flex items-center">
+                <AcademicCapIcon className="h-5 w-5 text-green-500 mr-3" />
+                <span className="text-sm text-gray-700">
+                  Add student records for discipleship
+                </span>
+              </div>
+              <div className="flex items-center">
+                <UsersIcon className="h-5 w-5 text-purple-500 mr-3" />
+                <span className="text-sm text-gray-700">
+                  Coordinate with your team
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

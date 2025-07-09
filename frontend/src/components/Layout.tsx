@@ -30,7 +30,33 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   // Query the current user to check authentication status
+
+  const BYPASS_AUTH = true; //set to false when you want real auth
+
   const { data, loading, error } = useQuery(ME_QUERY);
+
+  if (BYPASS_AUTH) {
+    const mockUser = {
+      id: "temp-user-1",
+      name: "Test Director",
+      email: "director@church.com",
+      role: "DIRECTOR",
+    };
+
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Sidebar user={mockUser} />
+        <div className="lg:pl-64">
+          <Header user={mockUser} />
+          <main className="py-6">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              {children}
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
 
   // Show loading spinner while checking authentication
   if (loading) {
