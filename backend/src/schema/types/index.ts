@@ -8,6 +8,9 @@
 // Export all user-related types and resolvers
 export * from "./User";
 
+// Export all evangelism contact types and resolvers
+export * from "./EvangelismContact";
+
 // Export all student record types and resolvers
 export * from "./StudentRecord";
 

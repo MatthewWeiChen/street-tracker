@@ -1,11 +1,3 @@
-/**
- * PURPOSE: Database schema definition using Prisma ORM
- * - Defines all database tables and their relationships
- * - Establishes the role-based hierarchy (Director -> Region Leader -> Group Leader -> Group Member)
- * - Sets up evangelism contact and student record tracking
- * - Handles cascading permissions and data visibility
- */
-
 generator client {
   provider = "prisma-client-js"
 }
